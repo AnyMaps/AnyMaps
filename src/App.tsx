@@ -1,15 +1,8 @@
-import { Dialog, DialogTrigger, DialogContent, Button } from "@nipsys/shadcn-lsd";
-
 function App() {
   return (
-    <Dialog>
-      <DialogTrigger>
-        <Button>Open</Button>
-      </DialogTrigger>
-      <DialogContent>
-        <p>Dialog content here</p>
-      </DialogContent>
-    </Dialog>
+    <div className="flex flex-col w-screen h-screen select-none">
+      <main className="flex flex-1 items-center justify-center overflow-hidden"></main>
+    </div>
   );
 }
 
