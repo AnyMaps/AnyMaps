@@ -1,11 +1,12 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { GetResourceResponse, RequestParameters } from 'maplibre-gl';
 import { $pmtilesInitialized } from '../states/map-state';
-import type { PmtilesMetadata } from '../types/map-types';
+import type { PmtilesInfo, PmtilesMetadata } from '../types/map-types';
 
-export async function initPmtilesReader(url: string): Promise<void> {
-  await invoke('init_pmtiles_reader', { url });
+export async function initPmtilesReader(): Promise<PmtilesInfo> {
+  const pmtilesInfo = await invoke<PmtilesInfo>('init_pmtiles_reader');
   $pmtilesInitialized.set(true);
+  return pmtilesInfo;
 }
 
 export async function getPmtilesHeader(): Promise<PmtilesMetadata> {
@@ -20,10 +21,6 @@ export async function getPmtilesTile(
   return await invoke<number[] | null>('get_pmtiles_tile', { z, x, y });
 }
 
-/**
- * Create a MapLibre protocol handler for PMTiles
- * This protocol handler intercepts pmtiles:// URLs and fetches tiles via the Rust backend
- */
 export function createPmtilesProtocol() {
   return async (
     request: RequestParameters,
@@ -35,10 +32,9 @@ export function createPmtilesProtocol() {
 
     const isInitialized = $pmtilesInitialized.get();
     if (!isInitialized) {
-      throw new Error('PMTiles not initialized. Call initPmtiles first.');
+      throw new Error('PMTiles not initialized. Call initPmtilesReader first.');
     }
 
-    // Handle metadata request
     if (request.type === 'json') {
       const header = await getPmtilesHeader();
 
@@ -52,7 +48,6 @@ export function createPmtilesProtocol() {
       };
     }
 
-    // Handle tile request
     const re = new RegExp(/pmtiles:\/\/.+\/(\d+)\/(\d+)\/(\d+)/);
     const result = request.url.match(re);
 
@@ -72,7 +67,6 @@ export function createPmtilesProtocol() {
       };
     }
 
-    // Return empty array for missing tiles
     return {
       data: new Uint8Array(),
     };

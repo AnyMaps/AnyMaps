@@ -11,6 +11,11 @@ export interface PmtilesMetadata {
   bounds: number[];
 }
 
+export interface PmtilesInfo {
+  filename: string;
+  metadata: PmtilesMetadata;
+}
+
 export type MapLoadingState = 'idle' | 'loading' | 'ready' | 'error';
 
 export type MapInstance = MapLibreMap | null;

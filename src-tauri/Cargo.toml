@@ -26,8 +26,7 @@ mockall = "0.14"
 proptest = "1.10"
 tempfile = "3.25"
 assert_matches = "1.5"
-reqwest = { version = "0.13", features = ["stream"] }
-pmtiles = { version = "0.19", features = ["http-async", "tilejson"] }
+pmtiles = { version = "0.19", features = ["mmap-async-tokio", "tilejson"] }
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
