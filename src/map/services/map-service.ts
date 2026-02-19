@@ -1,18 +1,15 @@
 import { layers, namedFlavor } from '@protomaps/basemaps';
 import maplibregl from 'maplibre-gl';
 import {
-  $mapCenter,
   $mapError,
   $mapInstance,
   $mapLoadingState,
-  $mapZoom,
   resetMapState,
 } from '../states/map-state';
 import type { MapInstance } from '../types/map-types';
 import { createPmtilesProtocol, initPmtilesReader } from './pmtiles-service';
 
-// todo: temporary, to replace with loading of local pmtiles
-const PMTILES_URL = 'https://demo-bucket.protomaps.com/v4.pmtiles';
+const InitZoomLevel = 10;
 
 export async function initializeMap(
   container: HTMLElement,
@@ -20,10 +17,14 @@ export async function initializeMap(
   try {
     $mapLoadingState.set('loading');
 
-    await initPmtilesReader(PMTILES_URL);
+    const pmtilesInfo = await initPmtilesReader();
 
     const protocol = createPmtilesProtocol();
     maplibregl.addProtocol('pmtiles', protocol);
+
+    const [west, south, east, north] = pmtilesInfo.metadata.bounds;
+    const centerLng = (west + east) / 2;
+    const centerLat = (south + north) / 2;
 
     const map = new maplibregl.Map({
       container,
@@ -32,7 +33,15 @@ export async function initializeMap(
         sources: {
           protomaps: {
             type: 'vector',
-            url: `pmtiles://${PMTILES_URL}`,
+            url: 'pmtiles://local',
+            minzoom: pmtilesInfo.metadata.minZoom,
+            maxzoom: pmtilesInfo.metadata.maxZoom,
+            bounds: pmtilesInfo.metadata.bounds as [
+              number,
+              number,
+              number,
+              number,
+            ],
           },
         },
         layers: layers('protomaps', namedFlavor('dark'), { lang: 'en' }),
@@ -40,8 +49,8 @@ export async function initializeMap(
         glyphs:
           'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
       },
-      center: $mapCenter.get(),
-      zoom: $mapZoom.get(),
+      center: [centerLng, centerLat],
+      zoom: InitZoomLevel,
       attributionControl: false,
     });
 
@@ -69,12 +78,6 @@ function setupMapEventListeners(map: maplibregl.Map): void {
     console.error('Map error:', e);
     $mapLoadingState.set('error');
     $mapError.set('Failed to load map');
-  });
-
-  map.on('moveend', () => {
-    const center = map.getCenter();
-    $mapCenter.set([center.lng, center.lat]);
-    $mapZoom.set(map.getZoom());
   });
 }
 

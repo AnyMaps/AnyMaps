@@ -12,3 +12,10 @@ pub struct PmtilesMetadata {
     pub max_latitude: f64,
     pub bounds: Vec<f64>,
 }
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PmtilesInfo {
+    pub filename: String,
+    pub metadata: PmtilesMetadata,
+}
