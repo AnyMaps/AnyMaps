@@ -1,8 +1,10 @@
+import MapView from './map/components/MapView';
+
 function App() {
   return (
-    <div className="flex flex-col w-screen h-screen select-none">
-      <main className="flex flex-1 items-center justify-center overflow-hidden"></main>
-    </div>
+    <main className="w-screen h-screen select-none overflow-hidden">
+      <MapView />
+    </main>
   );
 }
 

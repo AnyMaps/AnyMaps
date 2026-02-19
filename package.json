@@ -19,10 +19,14 @@
     "format": "biome format --write ."
   },
   "dependencies": {
+    "@nanostores/react": "^1.0.0",
     "@nipsys/shadcn-lsd": "^0.2.2",
+    "@protomaps/basemaps": "^5.7.0",
     "@tailwindcss/vite": "^4.1.18",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2",
+    "maplibre-gl": "^5.18.0",
+    "nanostores": "^1.1.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tailwindcss": "^4.1.18"
