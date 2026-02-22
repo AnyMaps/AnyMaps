@@ -9,8 +9,8 @@ pub fn run() {
         .manage(MapState::new())
         .invoke_handler(tauri::generate_handler![
             map_cmd::init_pmtiles_reader,
-            map_cmd::get_pmtiles_header,
             map_cmd::get_pmtiles_tile,
+            map_cmd::get_localities,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

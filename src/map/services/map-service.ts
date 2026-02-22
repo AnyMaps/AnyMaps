@@ -22,9 +22,9 @@ export async function initializeMap(
     const protocol = createPmtilesProtocol();
     maplibregl.addProtocol('pmtiles', protocol);
 
-    const [west, south, east, north] = pmtilesInfo.metadata.bounds;
-    const centerLng = (west + east) / 2;
-    const centerLat = (south + north) / 2;
+    const { combinedBounds, combinedCenter, minZoom, maxZoom } = pmtilesInfo;
+    const centerLng = combinedCenter.longitude;
+    const centerLat = combinedCenter.latitude;
 
     const map = new maplibregl.Map({
       container,
@@ -34,14 +34,14 @@ export async function initializeMap(
           protomaps: {
             type: 'vector',
             url: 'pmtiles://local',
-            minzoom: pmtilesInfo.metadata.minZoom,
-            maxzoom: pmtilesInfo.metadata.maxZoom,
-            bounds: pmtilesInfo.metadata.bounds as [
-              number,
-              number,
-              number,
-              number,
-            ],
+            minzoom: minZoom,
+            maxzoom: maxZoom,
+            bounds: [
+              combinedBounds.minLon,
+              combinedBounds.minLat,
+              combinedBounds.maxLon,
+              combinedBounds.maxLat,
+            ] as [number, number, number, number],
           },
         },
         layers: layers('protomaps', namedFlavor('dark'), { lang: 'en' }),

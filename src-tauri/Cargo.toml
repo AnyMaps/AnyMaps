@@ -27,6 +27,9 @@ proptest = "1.10"
 tempfile = "3.25"
 assert_matches = "1.5"
 pmtiles = { version = "0.19", features = ["mmap-async-tokio", "tilejson"] }
+rstar = "0.12"
+lru = "0.16"
+nonzero_ext = "0.3"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

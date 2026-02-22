@@ -1,29 +1,15 @@
-use pmtiles::TileCoord;
 use tauri::State;
 
 use super::map_service;
 use super::map_state::MapState;
-use super::map_types::{PmtilesInfo, PmtilesMetadata};
+use super::map_types::MultiPmtilesInfo;
 
 #[tauri::command]
 pub async fn init_pmtiles_reader(
     app: tauri::AppHandle,
     state: State<'_, MapState>,
-) -> Result<PmtilesInfo, String> {
-    map_service::init_reader(&app, &state).await
-}
-
-#[tauri::command]
-pub async fn get_pmtiles_header(
-    state: State<'_, MapState>,
-) -> Result<PmtilesMetadata, String> {
-    let guard = state.reader.read().await;
-
-    let reader = guard
-        .as_ref()
-        .ok_or_else(|| "PMTiles reader not initialized".to_string())?;
-
-    Ok(map_service::extract_metadata(reader))
+) -> Result<MultiPmtilesInfo, String> {
+    map_service::init_multi_reader(&app, &state).await
 }
 
 #[tauri::command]
@@ -33,17 +19,13 @@ pub async fn get_pmtiles_tile(
     y: u32,
     state: State<'_, MapState>,
 ) -> Result<Option<Vec<u8>>, String> {
-    let guard = state.reader.read().await;
+    map_service::get_tile(z, x, y, &state).await
+}
 
-    let reader = guard
-        .as_ref()
-        .ok_or_else(|| "PMTiles reader not initialized".to_string())?;
-
-    let coord = TileCoord::new(z, x, y).map_err(|e| e.to_string())?;
-
-    match reader.get_tile_decompressed(coord).await {
-        Ok(Some(tile)) => Ok(Some(tile.to_vec())),
-        Ok(None) => Ok(None),
-        Err(e) => Err(format!("Failed to get tile: {}", e)),
-    }
+#[tauri::command]
+pub async fn get_localities(
+    state: State<'_, MapState>,
+) -> Result<Vec<crate::map::map_types::LocalityMetadata>, String> {
+    let metadata = state.locality_metadata.read().await;
+    Ok(metadata.values().cloned().collect())
 }

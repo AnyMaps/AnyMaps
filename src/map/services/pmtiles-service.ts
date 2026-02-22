@@ -1,16 +1,15 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { GetResourceResponse, RequestParameters } from 'maplibre-gl';
 import { $pmtilesInitialized } from '../states/map-state';
-import type { PmtilesInfo, PmtilesMetadata } from '../types/map-types';
+import type { LocalityMetadata, MultiPmtilesInfo } from '../types/map-types';
 
-export async function initPmtilesReader(): Promise<PmtilesInfo> {
-  const pmtilesInfo = await invoke<PmtilesInfo>('init_pmtiles_reader');
+let cachedMetadata: MultiPmtilesInfo | null = null;
+
+export async function initPmtilesReader(): Promise<MultiPmtilesInfo> {
+  const info = await invoke<MultiPmtilesInfo>('init_pmtiles_reader');
+  cachedMetadata = info;
   $pmtilesInitialized.set(true);
-  return pmtilesInfo;
-}
-
-export async function getPmtilesHeader(): Promise<PmtilesMetadata> {
-  return await invoke<PmtilesMetadata>('get_pmtiles_header');
+  return info;
 }
 
 export async function getPmtilesTile(
@@ -19,6 +18,10 @@ export async function getPmtilesTile(
   y: number,
 ): Promise<number[] | null> {
   return await invoke<number[] | null>('get_pmtiles_tile', { z, x, y });
+}
+
+export async function getLocalities(): Promise<LocalityMetadata[]> {
+  return await invoke<LocalityMetadata[]>('get_localities');
 }
 
 export function createPmtilesProtocol() {
@@ -36,14 +39,22 @@ export function createPmtilesProtocol() {
     }
 
     if (request.type === 'json') {
-      const header = await getPmtilesHeader();
+      const metadata = cachedMetadata;
+      if (!metadata) {
+        throw new Error('PMTiles metadata not available');
+      }
 
       return {
         data: {
           tiles: [`${request.url}/{z}/{x}/{y}`],
-          minzoom: header.minZoom,
-          maxzoom: header.maxZoom,
-          bounds: header.bounds,
+          minzoom: metadata.minZoom,
+          maxzoom: metadata.maxZoom,
+          bounds: [
+            metadata.combinedBounds.minLon,
+            metadata.combinedBounds.minLat,
+            metadata.combinedBounds.maxLon,
+            metadata.combinedBounds.maxLat,
+          ],
         },
       };
     }
