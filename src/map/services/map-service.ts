@@ -15,8 +15,6 @@ export async function initializeMap(
   container: HTMLElement,
 ): Promise<MapInstance> {
   try {
-    $mapLoadingState.set('loading');
-
     const pmtilesInfo = await initPmtilesReader();
 
     const protocol = createPmtilesProtocol();
@@ -62,7 +60,6 @@ export async function initializeMap(
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : 'Failed to initialize map';
-    $mapLoadingState.set('error');
     $mapError.set(errorMessage);
     throw error;
   }

@@ -2,51 +2,36 @@ use crate::map::map_state::{MapState, SpatialIndexEntry};
 use crate::map::map_types::{
     BoundingBox, CenterPoint, LocalityInfo, LocalityMetadata, MultiPmtilesInfo,
 };
+use crate::storage::StorageManager;
 use pmtiles::{AsyncPmTilesReader, MmapBackend, TileCoord};
 use rstar::AABB;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::Manager;
 
-const PMTILES_RESOURCE_DIR: &str = "pmtiles";
-
-pub fn get_pmtiles_resource_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    let resource_dir = app
-        .path()
-        .resolve(PMTILES_RESOURCE_DIR, tauri::path::BaseDirectory::Resource);
-
-    match resource_dir {
-        Ok(path) if path.exists() => Ok(path),
-        Ok(path) => {
-            let cwd = std::env::current_dir().map_err(|e| format!("Failed to get cwd: {}", e))?;
-            let dev_path = cwd.join("src-tauri").join(PMTILES_RESOURCE_DIR);
-
-            if dev_path.exists() {
-                return Ok(dev_path);
-            }
-
-            Err(format!(
-                "PMTiles resource directory not found. Tried:\n  - Resource: '{}'\n  - Dev: '{}'\nEnsure 'pmtiles/' directory exists in src-tauri/",
-                path.display(),
-                dev_path.display()
-            ))
-        }
-        Err(e) => Err(format!(
-            "Failed to resolve PMTiles resource directory: {}. Ensure 'pmtiles/' is configured in tauri.conf.json bundle.resources",
-            e
-        )),
-    }
+pub fn get_pmtiles_data_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    app.path()
+        .app_data_dir()
+        .map(|p| p.join("pmtiles"))
+        .map_err(|e| format!("Failed to get app data directory: {}", e))
 }
 
 pub async fn discover_all_pmtiles_files(
     app: &tauri::AppHandle,
 ) -> Result<Vec<(String, PathBuf)>, String> {
-    let resource_dir = get_pmtiles_resource_dir(app)?;
+    let pmtiles_dir = get_pmtiles_data_dir(app)?;
 
-    let mut entries = std::fs::read_dir(&resource_dir).map_err(|e| {
+    if !pmtiles_dir.exists() {
+        return Err(format!(
+            "PMTiles data directory does not exist: '{}'. Files may not have been downloaded.",
+            pmtiles_dir.display()
+        ));
+    }
+
+    let mut entries = std::fs::read_dir(&pmtiles_dir).map_err(|e| {
         format!(
-            "Failed to read PMTiles resource directory '{}': {}",
-            resource_dir.display(),
+            "Failed to read PMTiles data directory '{}': {}",
+            pmtiles_dir.display(),
             e
         )
     })?;
@@ -57,7 +42,7 @@ pub async fn discover_all_pmtiles_files(
         let entry = entry.map_err(|e| {
             format!(
                 "Failed to read directory entry in '{}': {}",
-                resource_dir.display(),
+                pmtiles_dir.display(),
                 e
             )
         })?;
@@ -72,8 +57,8 @@ pub async fn discover_all_pmtiles_files(
 
     if files.is_empty() {
         return Err(format!(
-            "No PMTiles files found in '{}'. Add .pmtiles files to the directory.",
-            resource_dir.display()
+            "No PMTiles files found in '{}'. Files may not have been downloaded.",
+            pmtiles_dir.display()
         ));
     }
 
@@ -160,13 +145,15 @@ fn filename_to_locality_name(filename: &str) -> String {
 pub async fn init_multi_reader(
     app: &tauri::AppHandle,
     state: &tauri::State<'_, MapState>,
+    _storage_manager: &StorageManager,
 ) -> Result<MultiPmtilesInfo, String> {
+    let pmtiles_dir = get_pmtiles_data_dir(app)?;
+    
     let files = discover_all_pmtiles_files(app).await?;
 
-    let pmtiles_dir = get_pmtiles_resource_dir(app)?;
     {
         let mut guard = state.pmtiles_dir.write().await;
-        *guard = Some(pmtiles_dir.clone());
+        *guard = Some(pmtiles_dir);
     }
 
     let mut localities = Vec::new();

@@ -30,6 +30,7 @@ pmtiles = { version = "0.19", features = ["mmap-async-tokio", "tilejson"] }
 rstar = "0.12"
 lru = "0.16"
 nonzero_ext = "0.3"
+storage-bindings = "0.2"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

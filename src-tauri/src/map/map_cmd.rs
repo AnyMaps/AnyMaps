@@ -3,13 +3,16 @@ use tauri::State;
 use super::map_service;
 use super::map_state::MapState;
 use super::map_types::MultiPmtilesInfo;
+use crate::storage::StorageState;
 
 #[tauri::command]
 pub async fn init_pmtiles_reader(
     app: tauri::AppHandle,
-    state: State<'_, MapState>,
+    map_state: State<'_, MapState>,
+    storage_state: State<'_, StorageState>,
 ) -> Result<MultiPmtilesInfo, String> {
-    map_service::init_multi_reader(&app, &state).await
+    let storage_manager = storage_state.storage_manager();
+    map_service::init_multi_reader(&app, &map_state, storage_manager.as_ref()).await
 }
 
 #[tauri::command]

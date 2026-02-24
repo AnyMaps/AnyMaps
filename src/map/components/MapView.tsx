@@ -2,6 +2,7 @@ import { useStore } from '@nanostores/react';
 import { useEffect, useRef } from 'react';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { cleanupMap, initializeMap } from '../services/map-service';
+import { initializeStorage } from '../services/storage-service';
 import { $mapError, $mapLoadingState } from '../states/map-state';
 
 const MapView = () => {
@@ -17,11 +18,15 @@ const MapView = () => {
   useEffect(() => {
     const container = mapContainer.current;
     if (!container || mapInitialized.current) return;
+    $mapLoadingState.set('loading');
 
     mapInitialized.current = true;
 
-    initializeMap(container).catch((err) => {
-      console.error('Failed to initialize map:', err);
+    initializeStorage().then(() => {
+      initializeMap(container).catch((err) => {
+        $mapLoadingState.set('error');
+        console.error('Failed to initialize map:', err);
+      });
     });
 
     return () => {
