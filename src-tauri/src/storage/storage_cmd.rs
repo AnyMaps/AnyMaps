@@ -1,7 +1,8 @@
 use tauri::{Manager, State};
 
-use super::{parse_peer, parse_peers};
+use super::storage_config::{PEER_ADDRESS, PEER_ID};
 use super::storage_state::StorageState;
+use super::{parse_peer, parse_peers};
 
 #[tauri::command]
 pub async fn start_storage_node(
@@ -33,9 +34,9 @@ pub async fn stop_storage_node(
 
 #[tauri::command]
 pub async fn connect_to_peer(
-    peer_spec: String,
     state: State<'_, StorageState>,
 ) -> Result<(), String> {
+    let peer_spec = format!("{}:{}", PEER_ID, PEER_ADDRESS);
     let (peer_id, address) = parse_peer(&peer_spec)
         .map_err(|e| e.to_string())?;
     
